@@ -49,7 +49,7 @@ class Recommendation(db.Model):
     user_name = db.Column(db.String(100))
     tier = db.Column(db.String(50))
 
-    # From user-service: walletBalance, address (city), phoneNumber
+    # From user-service: walletCredit, address (city), phoneNumber
     user_wallet_balance = db.Column(db.Float)
     user_city = db.Column(db.String(100))
     user_phone = db.Column(db.String(50))
@@ -74,7 +74,7 @@ class Recommendation(db.Model):
             'userId': self.user_id,
             'userName': self.user_name,
             'tier': self.tier,
-            'userWalletBalance': self.user_wallet_balance,
+            'userWalletCredit': self.user_wallet_balance,
             'userCity': self.user_city,
             'userPhone': self.user_phone,
             'walletUnlockedPremium': self.wallet_unlocked_premium,
@@ -287,17 +287,17 @@ def generate_recommendation(user_id):
     except Exception:
         return jsonify({'message': 'Could not fetch user from user-service'}), 503
 
-    if not user.get('isActive', True):
+    if not user.get('isActive'):
         return jsonify({'message': 'User account is inactive'}), 403
 
     tier            = user.get('tier', 'new')
     reward_points   = user.get('rewardPoints', 0) or 0
-    wallet_balance  = user.get('walletBalance', 0.0) or 0.0
+    wallet_balance  = user.get('walletCredit', 0.0) or 0.0
     user_address    = user.get('address', '')
     user_phone      = user.get('phoneNumber', '')
     user_city       = _extract_city(user_address)
 
-    # ── Step 2: Wallet check — walletBalance ≥ 500 unlocks premium restaurants ─
+    # ── Step 2: Wallet check — walletCredit ≥ 500 unlocks premium restaurants ─
     wallet_unlocked_premium = wallet_balance >= 500.0
 
     # ── Step 3: Fetch order insights from order-service ─────────────────────
