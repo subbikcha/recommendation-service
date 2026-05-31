@@ -287,7 +287,7 @@ def generate_recommendation(user_id):
     except Exception:
         return jsonify({'message': 'Could not fetch user from user-service'}), 503
 
-    if not user.get('isActive', True):
+    if not (user.get('isActive') if user.get('isActive') is not None else True):
         return jsonify({'message': 'User account is inactive'}), 403
 
     tier            = user.get('tier', 'new')
@@ -308,7 +308,7 @@ def generate_recommendation(user_id):
     if tier == 'premium':
         boost_score = 10 + (reward_points // 100)
     elif tier == 'standard':
-        boost_score = 5 + (reward_points // 200)
+        boost_score = 5 + (reward_points // 2000)
     else:
         boost_score = 2
 
