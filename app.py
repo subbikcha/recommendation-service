@@ -50,7 +50,7 @@ class Recommendation(db.Model):
     tier = db.Column(db.String(50))
 
     # From user-service: walletBalance, address (city), phoneNumber
-    user_wallet_balance = db.Column(db.Float)
+    user_wallet_credit = db.Column(db.Float)
     user_city = db.Column(db.String(100))
     user_phone = db.Column(db.String(50))
     wallet_unlocked_premium = db.Column(db.Boolean, default=False)
@@ -66,7 +66,7 @@ class Recommendation(db.Model):
     cuisine_type = db.Column(db.String(50))
     delivery_time = db.Column(db.Integer)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    is_active = db.Column(db.Boolean, default=True)
+    is_active = db.Column(db.Boolean, nullable=True)
 
     def to_dict(self):
         return {
@@ -74,7 +74,7 @@ class Recommendation(db.Model):
             'userId': self.user_id,
             'userName': self.user_name,
             'tier': self.tier,
-            'userWalletBalance': self.user_wallet_balance,
+            'userWalletCredit': self.user_wallet_credit,
             'userCity': self.user_city,
             'userPhone': self.user_phone,
             'walletUnlockedPremium': self.wallet_unlocked_premium,
@@ -287,12 +287,13 @@ def generate_recommendation(user_id):
     except Exception:
         return jsonify({'message': 'Could not fetch user from user-service'}), 503
 
-    if not user.get('isActive', True):
+    is_active = user.get('isActive')
+    if is_active is not None and not is_active:
         return jsonify({'message': 'User account is inactive'}), 403
 
     tier            = user.get('tier', 'new')
     reward_points   = user.get('rewardPoints', 0) or 0
-    wallet_balance  = user.get('walletBalance', 0.0) or 0.0
+    wallet_balance  = user.get('walletCredit', 0.0) or 0.0
     user_address    = user.get('address', '')
     user_phone      = user.get('phoneNumber', '')
     user_city       = _extract_city(user_address)
@@ -353,7 +354,7 @@ def generate_recommendation(user_id):
         user_id=user.get('userId', user_id),
         user_name=user.get('userName', ''),
         tier=tier,
-        user_wallet_balance=wallet_balance,
+        user_wallet_credit=wallet_balance,
         user_city=user_city,
         user_phone=user_phone,
         wallet_unlocked_premium=wallet_unlocked_premium,
