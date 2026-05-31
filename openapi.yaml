@@ -1,0 +1,599 @@
+openapi: 3.0.3
+info:
+  title: Recommendation Service API
+  description: Recommendation Service API for generating and managing personalized restaurant recommendations
+  version: 1.0.0
+  contact:
+    name: Ripple Support
+  license:
+    name: Apache 2.0
+
+servers:
+  - url: http://localhost:8083
+    description: Local development server
+
+tags:
+  - name: health
+    description: Service health check
+  - name: restaurants
+    description: Restaurant management endpoints
+  - name: recommendations
+    description: Recommendation management and generation endpoints
+  - name: preferences
+    description: User preference management endpoints
+  - name: stats
+    description: Service statistics endpoints
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      operationId: healthCheck
+      tags:
+        - health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /restaurants:
+    get:
+      summary: List all restaurants
+      operationId: listRestaurants
+      tags:
+        - restaurants
+      parameters:
+        - name: cuisine_type
+          in: query
+          required: false
+          description: Filter restaurants by cuisine type
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of restaurants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Restaurant'
+    post:
+      summary: Create a new restaurant
+      operationId: createRestaurant
+      tags:
+        - restaurants
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRestaurantRequest'
+      responses:
+        '201':
+          description: Restaurant created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Restaurant'
+
+  /restaurants/{restaurantId}:
+    get:
+      summary: Get restaurant by ID
+      operationId: getRestaurant
+      tags:
+        - restaurants
+      parameters:
+        - name: restaurantId
+          in: path
+          required: true
+          description: The unique restaurant ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Restaurant found successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Restaurant'
+        '404':
+          description: Restaurant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /recommendations:
+    get:
+      summary: List recommendations (paginated)
+      operationId: listRecommendations
+      tags:
+        - recommendations
+      parameters:
+        - name: user_id
+          in: query
+          required: false
+          description: Filter recommendations by user ID
+          schema:
+            type: string
+        - name: page
+          in: query
+          required: false
+          description: Page number (1-based)
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          required: false
+          description: Number of results per page
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Paginated list of recommendations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRecommendations'
+
+  /recommendations/{recId}:
+    get:
+      summary: Get recommendation by ID
+      operationId: getRecommendation
+      tags:
+        - recommendations
+      parameters:
+        - name: recId
+          in: path
+          required: true
+          description: The unique recommendation ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Recommendation found successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recommendation'
+        '404':
+          description: Recommendation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Delete a recommendation
+      operationId: deleteRecommendation
+      tags:
+        - recommendations
+      parameters:
+        - name: recId
+          in: path
+          required: true
+          description: The unique recommendation ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Recommendation deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /recommendations/user/{userId}:
+    get:
+      summary: Get all recommendations for a user
+      operationId: getUserRecommendations
+      tags:
+        - recommendations
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: The user ID to fetch recommendations for
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of recommendations for the user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Recommendation'
+
+  /recommendations/generate/{userId}:
+    post:
+      summary: Generate a new recommendation for a user
+      operationId: generateRecommendation
+      tags:
+        - recommendations
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: The user ID to generate a recommendation for
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Recommendation generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recommendation'
+        '403':
+          description: User not eligible (inactive or restricted)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Upstream service unavailable (user-service or order-service)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /recommendations/{userId}:
+    post:
+      summary: Create a recommendation for a user (legacy)
+      operationId: createRecommendation
+      tags:
+        - recommendations
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: The user ID to create a recommendation for
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Recommendation created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recommendation'
+
+  /preferences/{userId}:
+    get:
+      summary: Get preferences for a user
+      operationId: getUserPreferences
+      tags:
+        - preferences
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: The user ID to fetch preferences for
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User preferences found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreference'
+        '404':
+          description: Preferences not found for this user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      summary: Create or update preferences for a user
+      operationId: upsertUserPreferences
+      tags:
+        - preferences
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: The user ID to upsert preferences for
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertPreferenceRequest'
+      responses:
+        '200':
+          description: Preferences saved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreference'
+
+  /stats:
+    get:
+      summary: Get service statistics
+      operationId: getStats
+      tags:
+        - stats
+      responses:
+        '200':
+          description: Aggregated service statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stats'
+
+components:
+  schemas:
+    Restaurant:
+      type: object
+      description: A restaurant available for recommendations
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the restaurant
+        name:
+          type: string
+          description: Name of the restaurant
+        cuisine_type:
+          type: string
+          description: Type of cuisine served
+        rating:
+          type: number
+          format: float
+          description: Restaurant rating
+          default: 4.0
+        is_premium_only:
+          type: boolean
+          description: Whether the restaurant is only visible to premium users
+          default: false
+        avg_delivery_time:
+          type: integer
+          description: Average delivery time in minutes
+          default: 30
+        base_price:
+          type: integer
+          description: Average base price per order in rupees
+          default: 200
+        is_active:
+          type: boolean
+          description: Whether the restaurant is currently active
+          default: true
+      required:
+        - id
+        - name
+        - cuisine_type
+
+    CreateRestaurantRequest:
+      type: object
+      description: Request body to create a new restaurant
+      properties:
+        name:
+          type: string
+          description: Name of the restaurant
+        cuisine_type:
+          type: string
+          description: Type of cuisine served
+        rating:
+          type: number
+          format: float
+          description: Restaurant rating
+        is_premium_only:
+          type: boolean
+          description: Whether the restaurant is only visible to premium users
+        avg_delivery_time:
+          type: integer
+          description: Average delivery time in minutes
+        base_price:
+          type: integer
+          description: Average base price per order in rupees
+      required:
+        - name
+        - cuisine_type
+
+    Recommendation:
+      type: object
+      description: A personalized restaurant recommendation for a user
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the recommendation
+        user_id:
+          type: string
+          description: ID of the user this recommendation is for
+        user_name:
+          type: string
+          description: Name of the user
+        tier:
+          type: string
+          description: User's membership tier at time of recommendation
+        user_wallet_balance:
+          type: number
+          format: float
+          description: User's wallet balance at time of recommendation
+        user_city:
+          type: string
+          description: User's city extracted from their address
+        user_phone:
+          type: string
+          description: User's phone number
+        wallet_unlocked_premium:
+          type: boolean
+          description: Whether wallet balance unlocked premium restaurant access
+          default: false
+        dominant_cuisine_from_orders:
+          type: string
+          description: Most ordered cuisine type from user's order history
+        avg_spend_from_orders:
+          type: integer
+          description: Average spend per order from user's order history
+        delivered_order_count:
+          type: integer
+          description: Number of delivered orders by the user
+          default: 0
+        recommended_restaurant:
+          type: string
+          description: Name of the recommended restaurant
+        boost_score:
+          type: integer
+          description: Score used to rank and select the recommendation
+        rating:
+          type: number
+          format: float
+          description: Rating of the recommended restaurant
+        cuisine_type:
+          type: string
+          description: Cuisine type of the recommended restaurant
+        delivery_time:
+          type: integer
+          description: Estimated delivery time in minutes
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the recommendation was created
+        is_active:
+          type: boolean
+          description: Whether this recommendation is still active
+          default: true
+      required:
+        - id
+        - user_id
+        - recommended_restaurant
+
+    UserPreference:
+      type: object
+      description: Stored cuisine and spending preferences for a user
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the preference record
+        user_id:
+          type: string
+          description: ID of the user these preferences belong to
+        preferred_cuisine:
+          type: string
+          description: User's preferred cuisine type
+        avg_spend:
+          type: integer
+          description: User's average spend per order
+          default: 0
+        total_orders:
+          type: integer
+          description: Total number of orders placed by the user
+          default: 0
+        delivered_orders:
+          type: integer
+          description: Number of delivered orders
+          default: 0
+        last_updated:
+          type: string
+          format: date-time
+          description: Timestamp when preferences were last updated
+      required:
+        - id
+        - user_id
+
+    UpsertPreferenceRequest:
+      type: object
+      description: Request body to create or update user preferences
+      properties:
+        preferred_cuisine:
+          type: string
+          description: User's preferred cuisine type
+        avg_spend:
+          type: integer
+          description: User's average spend per order
+        total_orders:
+          type: integer
+          description: Total number of orders placed
+      required:
+        - preferred_cuisine
+
+    PaginatedRecommendations:
+      type: object
+      description: Paginated list of recommendations
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Recommendation'
+          description: List of recommendations for the current page
+        total:
+          type: integer
+          description: Total number of recommendations
+        page:
+          type: integer
+          description: Current page number
+        per_page:
+          type: integer
+          description: Number of results per page
+      required:
+        - data
+        - total
+        - page
+        - per_page
+
+    Stats:
+      type: object
+      description: Aggregated service statistics
+      properties:
+        total_restaurants:
+          type: integer
+          description: Total number of active restaurants
+        total_recommendations:
+          type: integer
+          description: Total number of recommendations generated
+        total_preferences:
+          type: integer
+          description: Total number of user preference records
+
+    HealthResponse:
+      type: object
+      description: Health check response
+      properties:
+        status:
+          type: string
+          description: Health status of the service
+        service:
+          type: string
+          description: Name of the service
+      required:
+        - status
+        - service
+
+    MessageResponse:
+      type: object
+      description: Generic message response
+      properties:
+        message:
+          type: string
+          description: Response message
+      required:
+        - message
+
+    ErrorResponse:
+      type: object
+      description: Standard error response
+      properties:
+        error:
+          type: string
+          description: Error type or message
+        message:
+          type: string
+          description: Detailed error message
+      required:
+        - message
