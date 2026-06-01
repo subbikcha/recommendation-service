@@ -287,12 +287,12 @@ def generate_recommendation(user_id):
     except Exception:
         return jsonify({'message': 'Could not fetch user from user-service'}), 503
 
-    if not user.get('isActive', True):
+    if user.get('isActive') is False:
         return jsonify({'message': 'User account is inactive'}), 403
 
     tier            = user.get('tier', 'new')
     reward_points   = user.get('rewardPoints', 0) or 0
-    wallet_balance  = user.get('walletBalance', 0.0) or 0.0
+    wallet_balance  = user.get('walletCredit', 0.0) or 0.0
     user_address    = user.get('address', '')
     user_phone      = user.get('phoneNumber', '')
     user_city       = _extract_city(user_address)
