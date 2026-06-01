@@ -26,7 +26,7 @@ class Restaurant(db.Model):
     is_premium_only = db.Column(db.Boolean, default=False)
     avg_delivery_time = db.Column(db.Integer, default=30)
     base_price = db.Column(db.Integer, default=200)
-    is_active = db.Column(db.Boolean, default=True)
+    is_active = db.Column(db.Boolean, nullable=True)
 
     def to_dict(self):
         return {
@@ -49,7 +49,7 @@ class Recommendation(db.Model):
     user_name = db.Column(db.String(100))
     tier = db.Column(db.String(50))
 
-    # From user-service: walletBalance, address (city), phoneNumber
+    # From user-service: walletCredit, address (city), phoneNumber
     user_wallet_balance = db.Column(db.Float)
     user_city = db.Column(db.String(100))
     user_phone = db.Column(db.String(50))
@@ -66,7 +66,7 @@ class Recommendation(db.Model):
     cuisine_type = db.Column(db.String(50))
     delivery_time = db.Column(db.Integer)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    is_active = db.Column(db.Boolean, default=True)
+    is_active = db.Column(db.Boolean, nullable=True)
 
     def to_dict(self):
         return {
@@ -287,17 +287,17 @@ def generate_recommendation(user_id):
     except Exception:
         return jsonify({'message': 'Could not fetch user from user-service'}), 503
 
-    if not user.get('isActive', True):
+    if user.get('isActive') is False:
         return jsonify({'message': 'User account is inactive'}), 403
 
     tier            = user.get('tier', 'new')
     reward_points   = user.get('rewardPoints', 0) or 0
-    wallet_balance  = user.get('walletBalance', 0.0) or 0.0
+    wallet_balance  = user.get('walletCredit', 0.0) or 0.0
     user_address    = user.get('address', '')
     user_phone      = user.get('phoneNumber', '')
     user_city       = _extract_city(user_address)
 
-    # ── Step 2: Wallet check — walletBalance ≥ 500 unlocks premium restaurants ─
+    # ── Step 2: Wallet check — walletCredit ≥ 500 unlocks premium restaurants ─
     wallet_unlocked_premium = wallet_balance >= 500.0
 
     # ── Step 3: Fetch order insights from order-service ─────────────────────
