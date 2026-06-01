@@ -287,7 +287,7 @@ def generate_recommendation(user_id):
     except Exception:
         return jsonify({'message': 'Could not fetch user from user-service'}), 503
 
-    if not user.get('isActive', True):
+    if user.get('isActive') is not True:
         return jsonify({'message': 'User account is inactive'}), 403
 
     tier            = user.get('tier', 'new')
