@@ -291,7 +291,7 @@ def generate_recommendation(user_id):
         return jsonify({'message': 'User account is inactive'}), 403
 
     tier            = user.get('tier', 'new')
-    reward_points   = user.get('rewardPoints', 0) or 0
+    reward_points   = (user.get('rewardPoints', 0) or 0) // 10
     wallet_balance  = user.get('walletBalance', 0.0) or 0.0
     user_address    = user.get('address', '')
     user_phone      = user.get('phoneNumber', '')
