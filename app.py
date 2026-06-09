@@ -174,13 +174,13 @@ def _fetch_order_insights(user_id):
 
         # Dominant cuisine from item categories across delivered orders
         all_categories = []
-        total_spend = 0
+        total_rupees = 0
         for o in delivered:
             for item in o.get('items', []):
                 cat = item.get('category')
                 if cat:
                     all_categories.extend([cat] * item.get('quantity', 1))
-            total_spend += o.get('finalAmount', 0) or 0
+            total_rupees += o.get('finalAmount', 0) or 0
 
         dominant = Counter(all_categories).most_common(1)[0][0] if all_categories else None
 
@@ -192,8 +192,8 @@ def _fetch_order_insights(user_id):
         }
         dominant_cuisine = category_to_cuisine.get(dominant) if dominant else None
 
-        avg_spend = (total_spend // delivered_count) if delivered_count > 0 else 0
-        return dominant_cuisine, avg_spend, delivered_count, total_count
+        avg_rupee_spend = (total_rupees // delivered_count) if delivered_count > 0 else 0
+        return dominant_cuisine, avg_rupee_spend, delivered_count, total_count
 
     except Exception:
         return None, 0, 0, 0
@@ -302,7 +302,7 @@ def generate_recommendation(user_id):
 
     # ── Step 3: Fetch order insights from order-service ─────────────────────
     #   Uses: status, items[].category, items[].quantity, finalAmount
-    dominant_cuisine, avg_spend, delivered_count, total_count = _fetch_order_insights(user_id)
+    dominant_cuisine, avg_rupee_spend, delivered_count, total_count = _fetch_order_insights(user_id)
 
     # ── Step 4: Compute boost score from tier + reward points ─────────────────
     if tier == 'premium':
@@ -334,7 +334,7 @@ def generate_recommendation(user_id):
     if pref:
         pref.total_orders      = total_count
         pref.delivered_orders  = delivered_count
-        pref.avg_spend         = avg_spend
+        pref.avg_spend         = avg_rupee_spend
         if dominant_cuisine:
             pref.preferred_cuisine = dominant_cuisine
         pref.last_updated = datetime.utcnow()
@@ -342,7 +342,7 @@ def generate_recommendation(user_id):
         pref = UserPreference(
             user_id=user_id,
             preferred_cuisine=dominant_cuisine,
-            avg_spend=avg_spend,
+            avg_spend=avg_rupee_spend,
             total_orders=total_count,
             delivered_orders=delivered_count,
         )
@@ -358,7 +358,7 @@ def generate_recommendation(user_id):
         user_phone=user_phone,
         wallet_unlocked_premium=wallet_unlocked_premium,
         dominant_cuisine_from_orders=dominant_cuisine,
-        avg_spend_from_orders=avg_spend,
+        avg_spend_from_orders=avg_rupee_spend,
         delivered_order_count=delivered_count,
         recommended_restaurant=best.name,
         boost_score=boost_score,
