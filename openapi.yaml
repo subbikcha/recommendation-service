@@ -351,6 +351,7 @@ components:
           description: Name of the restaurant
         cuisineType:
           type: string
+          nullable: true
           description: Type of cuisine served
         rating:
           type: number
@@ -458,13 +459,18 @@ components:
         rating:
           type: number
           format: float
-          description: Rating of the recommended restaurant
+          nullable: true
+          description: >
+            Float rating (e.g. 4.5). Consumer UIs typically apply Math.floor
+            for whole-star display — this is expected rendering behaviour,
+            not a type mismatch.
         cuisineType:
           type: string
           description: Cuisine type of the recommended restaurant
-        deliveryTime:
+        avgDeliveryTime:
           type: integer
-          description: Estimated delivery time in minutes
+          nullable: true
+          description: Average delivery time in minutes
         createdAt:
           type: string
           format: date-time
