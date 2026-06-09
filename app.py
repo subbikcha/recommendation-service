@@ -280,7 +280,7 @@ def get_recommendations_for_user(user_id):
 @app.route('/recommendations/generate/<user_id>', methods=['POST'])
 def generate_recommendation(user_id):
 
-    # ── Step 1: Fetch user — uses userId, userName, tier, rewardPoints,
+    # ── Step 1: Fetch user — uses userId, userName, tier, loyaltyPoints,
     #            email, phoneNumber, address, walletBalance, isActive ──────────
     try:
         user = _fetch_user(user_id)
@@ -291,24 +291,24 @@ def generate_recommendation(user_id):
         return jsonify({'message': 'User account is inactive'}), 403
 
     tier            = user.get('tier', 'new')
-    reward_points   = user.get('rewardPoints', 0) or 0
-    wallet_balance  = user.get('walletBalance', 0.0) or 0.0
+    loyalty_points  = user.get('loyaltyPoints', 0) or 0
+    wallet_balance  = (user.get('walletBalance', 0.0) or 0.0) * 0.01
     user_address    = user.get('address', '')
     user_phone      = user.get('phoneNumber', '')
     user_city       = _extract_city(user_address)
 
-    # ── Step 2: Wallet check — walletBalance ≥ 500 unlocks premium restaurants ─
+    # ── Step 2: Wallet check — walletBalance (converted to rupees) ≥ 500 unlocks premium restaurants ─
     wallet_unlocked_premium = wallet_balance >= 500.0
 
     # ── Step 3: Fetch order insights from order-service ─────────────────────
     #   Uses: status, items[].category, items[].quantity, finalAmount
     dominant_cuisine, avg_rupee_spend, delivered_count, total_count = _fetch_order_insights(user_id)
 
-    # ── Step 4: Compute boost score from tier + reward points ─────────────────
+    # ── Step 4: Compute boost score from tier + loyalty points ─────────────────
     if tier == 'premium':
-        boost_score = 10 + (reward_points // 100)
+        boost_score = 10 + (loyalty_points // 100)
     elif tier == 'standard':
-        boost_score = 5 + (reward_points // 200)
+        boost_score = 5 + (loyalty_points // 200)
     else:
         boost_score = 2
 
