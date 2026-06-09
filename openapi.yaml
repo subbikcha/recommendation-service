@@ -349,7 +349,7 @@ components:
         name:
           type: string
           description: Name of the restaurant
-        cuisine_type:
+        cuisineType:
           type: string
           description: Type of cuisine served
         rating:
@@ -357,26 +357,26 @@ components:
           format: float
           description: Restaurant rating
           default: 4.0
-        is_premium_only:
+        isPremiumOnly:
           type: boolean
           description: Whether the restaurant is only visible to premium users
           default: false
-        avg_delivery_time:
+        avgDeliveryTime:
           type: integer
           description: Average delivery time in minutes
           default: 30
-        base_price:
+        basePrice:
           type: integer
           description: Average base price per order in rupees
           default: 200
-        is_active:
+        isActive:
           type: boolean
           description: Whether the restaurant is currently active
           default: true
       required:
         - id
         - name
-        - cuisine_type
+        - cuisineType
 
     CreateRestaurantRequest:
       type: object
@@ -387,7 +387,7 @@ components:
           description: Name of the restaurant
         cuisine_type:
           type: string
-          description: Type of cuisine served
+          description: Type of cuisine served (uses snake_case to match Flask request parsing)
         rating:
           type: number
           format: float
@@ -412,67 +412,68 @@ components:
         id:
           type: integer
           description: Unique identifier for the recommendation
-        user_id:
+        userId:
           type: string
           description: ID of the user this recommendation is for
-        user_name:
+        userName:
           type: string
           description: Name of the user
         tier:
           type: string
           description: User's membership tier at time of recommendation
-        user_wallet_balance:
+        userWalletBalance:
           type: number
           format: float
           description: User's wallet balance at time of recommendation
-        user_city:
+        userCity:
           type: string
           description: User's city extracted from their address
-        user_phone:
+          nullable: true
+        userPhone:
           type: string
           description: User's phone number
-        wallet_unlocked_premium:
+          nullable: true
+        walletUnlockedPremium:
           type: boolean
-          description: Whether wallet balance unlocked premium restaurant access
+          description: Whether wallet balance ≥ 500 unlocked premium restaurant access
           default: false
-        dominant_cuisine_from_orders:
+        dominantCuisineFromOrders:
           type: string
           description: Most ordered cuisine type from user's order history
-        avg_spend_from_orders:
+          nullable: true
+        avgSpendFromOrders:
           type: integer
-          description: Average spend per order from user's order history
-        delivered_order_count:
+          description: Average spend per delivered order in rupees
+          default: 0
+        deliveredOrderCount:
           type: integer
           description: Number of delivered orders by the user
           default: 0
-        recommended_restaurant:
+        restaurant:
           type: string
           description: Name of the recommended restaurant
-        boost_score:
+        boostScore:
           type: integer
           description: Score used to rank and select the recommendation
         rating:
           type: number
           format: float
           description: Rating of the recommended restaurant
-        cuisine_type:
+        cuisineType:
           type: string
           description: Cuisine type of the recommended restaurant
-        delivery_time:
+        deliveryTime:
           type: integer
           description: Estimated delivery time in minutes
-        created_at:
+        createdAt:
           type: string
           format: date-time
           description: Timestamp when the recommendation was created
-        is_active:
-          type: boolean
-          description: Whether this recommendation is still active
-          default: true
+          nullable: true
       required:
         - id
-        - user_id
-        - recommended_restaurant
+        - userId
+        - restaurant
 
     UserPreference:
       type: object
@@ -481,31 +482,33 @@ components:
         id:
           type: integer
           description: Unique identifier for the preference record
-        user_id:
+        userId:
           type: string
           description: ID of the user these preferences belong to
-        preferred_cuisine:
+        preferredCuisine:
           type: string
           description: User's preferred cuisine type
-        avg_spend:
+          nullable: true
+        avgSpend:
           type: integer
           description: User's average spend per order
           default: 0
-        total_orders:
+        totalOrders:
           type: integer
           description: Total number of orders placed by the user
           default: 0
-        delivered_orders:
+        deliveredOrders:
           type: integer
           description: Number of delivered orders
           default: 0
-        last_updated:
+        lastUpdated:
           type: string
           format: date-time
           description: Timestamp when preferences were last updated
+          nullable: true
       required:
         - id
-        - user_id
+        - userId
 
     UpsertPreferenceRequest:
       type: object
@@ -527,7 +530,7 @@ components:
       type: object
       description: Paginated list of recommendations
       properties:
-        data:
+        items:
           type: array
           items:
             $ref: '#/components/schemas/Recommendation'
@@ -538,28 +541,35 @@ components:
         page:
           type: integer
           description: Current page number
-        per_page:
+        pages:
           type: integer
-          description: Number of results per page
+          description: Total number of pages
       required:
-        - data
+        - items
         - total
         - page
-        - per_page
+        - pages
 
     Stats:
       type: object
       description: Aggregated service statistics
       properties:
-        total_restaurants:
+        totalRecommendations:
+          type: integer
+          description: Total number of active recommendations
+        totalRestaurants:
           type: integer
           description: Total number of active restaurants
-        total_recommendations:
+        premiumRecommendations:
           type: integer
-          description: Total number of recommendations generated
-        total_preferences:
+          description: Number of recommendations generated for premium-tier users
+        walletUnlockedPremiumCount:
           type: integer
-          description: Total number of user preference records
+          description: Number of recommendations where wallet balance unlocked premium restaurants
+        topRestaurant:
+          type: string
+          description: Name of the most frequently recommended restaurant
+          nullable: true
 
     HealthResponse:
       type: object
